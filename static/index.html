@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+</head>
+
+<style>
+    input[type=file] {
+        display: none;
+    }
+
+    * {
+        box-sizing: border-box;
+        font-family: Arial, serif;
+    }
+
+    .header {
+        text-align: center;
+        color: forestgreen;
+        font-family: Arial, serif;
+    }
+
+    .center {
+        margin: 0 auto;
+        text-align: center;
+        transform: translateY(10%);
+        height: 90vh;
+    }
+
+    .text-input {
+        height: 30px;
+        margin-bottom: 10px;
+        width: 300px;
+        font-size: 20px;
+        border: none;
+        background: lightgrey;
+        border-radius: 5px;
+    }
+
+    .text-input:hover {
+        opacity: 80%;
+    }
+
+    .button {
+        margin-bottom: 15px;
+        box-shadow: 0 9px #999;
+        cursor: pointer;
+        background-color: forestgreen;
+        color: lightgrey
+    }
+
+    .button:hover {
+        background-color: #3e8e41
+    }
+
+    .button:active {
+        box-shadow: 0 5px #666;
+        transform: translateY(4px);
+    }
+
+    .button:disabled {
+        background-color: lightgray;
+        color: grey;
+    }
+
+    h5 {
+        font-family: Arial, serif;
+        color: darkgray;
+        margin-bottom: 5px;
+        margin-top: 0;
+    }
+
+    body {
+        background-image: url("pipe.svg");
+        background-size: 30px;
+    }
+</style>
+<body>
+<div class="center" id="drop-container">
+    <h1 class="header">Pipe-Transfer</h1>
+
+    <label id="file-selector" style="margin: 0 auto">
+        <input type="file"/>
+        <i class=""></i>
+        <img src="https://pipeman.org/upload-icon.svg" alt="Upload-Icon" width="100px">
+        <h5>Choose a file</h5>
+    </label>
+
+    <div id="settings" hidden>
+        <div style="width: fit-content; margin: 0 auto">
+            <div style="width: fit-content;">
+                <h5 style="text-align: left">Filename</h5>
+                <input id="filename-input" type="text">
+
+                <h5 style="margin-top: 10px; text-align: left">Password (Not required)</h5>
+                <input id="password" type="password">
+
+                <h5 style="margin-top: 10px; text-align: left">Delete after downloads</h5>
+                <input type="number" placeholder="Don't count downloads" id="max-downloads">
+            </div>
+
+            <h5 style="margin-top: 10px; text-align: left">Delete after</h5>
+            <input id="delete-time" type="number" min="0">
+            <select name="unit" id="unit">
+                <option value="60">Minutes</option>
+                <option value="3600">Hours</option>
+                <option value="86400" selected>Days</option>
+            </select>
+        </div>
+    </div>
+
+    <input type="button" id="upload-button" class="text-input button" value="Upload!!" style="margin: 10px auto 0;"
+           onclick="upload()">
+    <br>
+    <div id="progress-div" hidden>
+        <h2>Uploading...</h2>
+        <progress id="progress">Upload-Progress</progress>
+    </div>
+    <br>
+    <input type="button" id="cancel" class="text-input button" value="Cancel"
+           style="margin: 10px auto 0; background: orangered" hidden onclick="cancelUpload()">
+
+    <div id="upload-done" hidden>
+        <h2>Upload successful!</h2>
+        <h5>Download:</h5>
+        <input id="download-link" type="text" readonly>
+        <input type="button" value="Copy"
+               onclick="navigator.clipboard.writeText(document.getElementById('download-link').value)">
+
+        <br>
+        <br>
+        <input id="upload-more" class="text-input button" type="button" value="Upload more files"
+               onclick="showStage(1)">
+    </div>
+
+</div>
+
+<script>
+    const fileSelector = document.getElementById('file-selector');
+    let file;
+    let cancelled = false;
+    document.getElementById("delete-time").value = 7;
+
+    fileSelector.addEventListener('change', (e) => {
+        file = e.target.files[0];
+        showStage(2);
+    });
+
+    function upload() {
+        showStage(3);
+
+        const deleteDelay = document.getElementById("delete-time").value * document.getElementById("unit").value;
+        const maxDownloads = document.getElementById("max-downloads").value;
+        console.log(maxDownloads);
+        cancelled = false;
+        uploadFile(deleteDelay, maxDownloads.length === 0 ? -1 : maxDownloads);
+    }
+
+    function cancelUpload() {
+        cancelled = true;
+    }
+
+    function showStage(stage) {
+        document.getElementById("progress").hidden = false;
+        switch (stage) {
+            case 1: {
+                document.getElementById("settings").hidden = true;
+                document.getElementById("upload-button").hidden = true;
+                document.getElementById("progress-div").hidden = true;
+                document.getElementById("file-selector").hidden = false;
+                document.getElementById("cancel").hidden = true;
+                document.getElementById("upload-done").hidden = true;
+                break;
+            }
+            case 2: {
+                document.getElementById("settings").hidden = false;
+                document.getElementById("upload-button").hidden = false;
+                document.getElementById("file-selector").hidden = true;
+                document.getElementById("filename-input").value = file.name;
+                document.getElementById("filename-input").placeholder = file.name;
+                break;
+            }
+            case 3: {
+                document.getElementById("settings").hidden = true;
+                document.getElementById("upload-button").hidden = true;
+                document.getElementById("file-selector").hidden = true;
+                document.getElementById("cancel").hidden = false;
+                break;
+            }
+            case 4: {
+                document.getElementById("settings").hidden = true;
+                document.getElementById("upload-button").hidden = true;
+                document.getElementById("file-selector").hidden = true;
+                document.getElementById("cancel").hidden = true;
+                document.getElementById("upload-done").hidden = false;
+                break;
+            }
+        }
+    }
+
+    showStage(1);
+
+    function uploadFile(deleteDelay, maxDownloads) {
+        const fileReader = new FileReader();
+        const progressBar = document.getElementById("progress");
+        document.getElementById("progress-div").hidden = false;
+
+        fileReader.readAsArrayBuffer(file);
+        fileReader.onloadend = (evt) => {
+            if (evt.target.readyState === FileReader.DONE) {
+                const arrayBuffer = evt.target.result;
+
+                fetch("/api/uploads/create", {
+                    method: "POST",
+                    headers: {
+                        "password": document.getElementById("password").value,
+                        "filename": file.name,
+                        "delete-delay": deleteDelay,
+                        "max-download-count": maxDownloads
+                    }
+                }).then(response => response.json().then(async result => {
+                    if (response.status !== 200) {
+                        // upload failed
+                        progressBar.hidden = true;
+                        return;
+                    }
+
+                    progressBar.max = arrayBuffer.byteLength;
+                    const uploadID = result["upload-id"];
+
+                    // upload chunks
+                    const bufferSize = 2_097_152; // 1_048_576
+                    for (let i = 0; i < arrayBuffer.byteLength; i += bufferSize) {
+                        if (cancelled) {
+                            showStage(1);
+                            return;
+                        }
+                        progressBar.value = i;
+                        await fetch("/api/uploads/write?id=" + uploadID, {
+                            method: "POST",
+                            body: arrayBuffer.slice(i, i + bufferSize)
+                        });
+                    }
+
+                    await fetch("/api/uploads/close?id=" + uploadID, {
+                        method: "POST"
+                    }).then(r => r.json().then(j => {
+                        document.getElementById("progress-div").hidden = true;
+                        document.getElementById("download-link").value = window.location.origin + "/download/" + j["file-id"];
+                        showStage(4);
+                    }));
+                }));
+            }
+        }
+    }
+</script>
+</body>

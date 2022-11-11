@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_LEVEL" value="info" />
+<!--    <conversionRule conversionWord="highlighter" converterClass="org.pipeman.books.utils.HighlightColorer" />-->
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+<!--            <pattern>%highlighter([%d{HH:mm:ss}] [%thread/%level]: %msg%n)</pattern>-->
+            <pattern>[%d{HH:mm:ss}] [%thread/%level]: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/latest.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>[%d{HH:mm:ss}] [%thread/%level]: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </root>
+
+</configuration>
