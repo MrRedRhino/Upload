@@ -9,6 +9,7 @@ import org.pipeman.upload.uploads.UploadMeta;
 import org.pipeman.upload.utils.Database;
 import org.pipeman.upload.utils.Utils;
 
+import javax.naming.SizeLimitExceededException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,6 +49,8 @@ public class Api {
                 if (!UploadManager.INSTANCE.writeToUpload(id.get(), data)) Responses.INVALID_UPLOAD_ID.apply(ctx);
             } catch (IOException ignored) {
                 throw new InternalServerErrorResponse();
+            } catch (SizeLimitExceededException ignored) {
+                Responses.FILE_TOO_LARGE.apply(ctx);
             }
         }
     }

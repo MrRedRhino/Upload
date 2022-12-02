@@ -4,6 +4,7 @@ import org.pipeman.upload.Config;
 import org.pipeman.upload.utils.Database;
 import org.pipeman.upload.utils.Utils;
 
+import javax.naming.SizeLimitExceededException;
 import java.io.IOException;
 import java.util.*;
 
@@ -22,10 +23,12 @@ public class UploadManager {
         return newUpload;
     }
 
-    public boolean writeToUpload(UUID uploadId, byte[] data) throws IOException {
+    public boolean writeToUpload(UUID uploadId, byte[] data) throws IOException, SizeLimitExceededException {
         Upload upload = uploads.get(uploadId);
         if (upload == null) return false;
-        upload.write(data);
+        int maxSize = Config.PROVIDER.c().maximumFileSize;
+        if (maxSize != -1 && upload.size() + data.length < maxSize) upload.write(data);
+        else throw new SizeLimitExceededException();
         return true;
     }
 
@@ -73,17 +76,18 @@ public class UploadManager {
 
         @Override
         public void run() {
-            for (Iterator<Map.Entry<UUID, Upload>> it = target.uploads.entrySet().iterator(); it.hasNext(); ) {
-                Map.Entry<UUID, Upload> e = it.next();
+            List<Map.Entry<UUID, Upload>> toRemove = new ArrayList<>();
 
+            for (Map.Entry<UUID, Upload> e : target.uploads.entrySet()) {
                 if (e.getValue().lastWrite() < System.currentTimeMillis() - Config.PROVIDER.c().maximumIdle) {
                     try {
                         target.cancelUpload(e.getKey());
                     } catch (IOException ignored) {
                     }
-                    it.remove();
+                    toRemove.add(e);
                 }
             }
+            toRemove.forEach(target.uploads.entrySet()::remove);
         }
     }
 }

@@ -16,6 +16,7 @@ public class Upload {
     private final String fileId;
 
     private long lastWrite = System.currentTimeMillis();
+    private long size = 0;
 
     private final String filename;
     private final String password;
@@ -49,6 +50,7 @@ public class Upload {
     public void write(byte[] data) throws IOException {
         os.write(data);
         lastWrite = System.currentTimeMillis();
+        size += data.length;
     }
 
     public void close() throws IOException {
@@ -70,5 +72,9 @@ public class Upload {
 
     public UploadMeta createMeta() {
         return new UploadMeta(password, filename, Utils.timeSeconds() + deleteDelay, maxDownloads, 0);
+    }
+
+    public long size() {
+        return size;
     }
 }
