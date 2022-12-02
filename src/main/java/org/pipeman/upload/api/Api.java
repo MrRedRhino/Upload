@@ -34,24 +34,18 @@ public class Api {
 
     public static void writeToUpload(Context ctx) {
         Optional<UUID> id = getUUID(ctx);
-        if (id.isEmpty()) {
-            ctx.json(Map.of("errors", "invalid-upload-id"));
-            ctx.status(400);
-        } else {
+        if (id.isEmpty()) Responses.INVALID_UPLOAD_ID.apply(ctx);
+        else {
             byte[] data = ctx.bodyAsBytes();
 
             int maxSize = Config.PROVIDER.c().maximumChunkSize;
             if (data.length == 0 || (maxSize != -1 && data.length > maxSize)) {
-                ctx.json(Map.of("error", "invalid-body-length"));
-                ctx.status(400);
+                Responses.BODY_TOO_LARGE.apply(ctx);
                 return;
             }
 
             try {
-                if (!UploadManager.INSTANCE.writeToUpload(id.get(), data)) {
-                    ctx.json(Map.of("error", "invalid-upload-id"));
-                    ctx.status(400);
-                }
+                if (!UploadManager.INSTANCE.writeToUpload(id.get(), data)) Responses.INVALID_UPLOAD_ID.apply(ctx);
             } catch (IOException ignored) {
                 throw new InternalServerErrorResponse();
             }
@@ -61,15 +55,12 @@ public class Api {
     public static void closeUpload(Context ctx) {
         Optional<UUID> id = getUUID(ctx);
         if (id.isEmpty()) {
-            ctx.json(Map.of("error", "invalid-upload-id"));
-            ctx.status(400);
+            Responses.INVALID_UPLOAD_ID.apply(ctx);
         } else {
             try {
                 String fileId = UploadManager.INSTANCE.finishUpload(id.get());
-                if (fileId.isEmpty()) {
-                    ctx.json(Map.of("error", "invalid-upload-id"));
-                    ctx.status(400);
-                } else ctx.json(Map.of("file-id", fileId));
+                if (fileId.isEmpty()) Responses.INVALID_UPLOAD_ID.apply(ctx);
+                else ctx.json(Map.of("file-id", fileId));
             } catch (IOException e) {
                 throw new InternalServerErrorResponse();
             }
@@ -96,11 +87,8 @@ public class Api {
         }
 
         UploadMeta meta = UploadMeta.deserialize(data);
-        if (meta.password().isEmpty()) {
-            ctx.redirect("/api/download/" + s);
-        } else {
-            ctx.html(Files.readString(Path.of("static", "require-password.html")));
-        }
+        if (meta.password().isEmpty()) ctx.redirect("/api/download/" + s);
+        else ctx.html(Files.readString(Path.of("static", "require-password.html")));
     }
 
     public static void doDownload(Context ctx) {
@@ -116,13 +104,11 @@ public class Api {
         if (!meta.password().isEmpty()) {
             String password = ctx.queryParam("password");
             if (password == null) {
-                ctx.json(Map.of("error", "password-missing"));
-                ctx.status(400);
+                Responses.PASSWORD_MISSING.apply(ctx);
                 return;
             }
             if (!password.equals(meta.password())) {
-                ctx.json(Map.of("error", "invalid-password"));
-                ctx.status(400);
+                Responses.PASSWORD_WRONG.apply(ctx);
                 return;
             }
         }
