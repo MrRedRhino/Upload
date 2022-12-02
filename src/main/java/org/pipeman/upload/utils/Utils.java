@@ -4,6 +4,7 @@ import org.pipeman.upload.Config;
 
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.util.Optional;
 
 public class Utils {
     private static final char[] ABC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
@@ -25,5 +26,21 @@ public class Utils {
 
     public static long timeSeconds() {
         return System.currentTimeMillis() / 1000;
+    }
+
+    public static Optional<Long> getLong(String l) {
+        try {
+            return Optional.of(Long.parseLong(l));
+        } catch (NumberFormatException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<Integer> getInt(String l) {
+        try {
+            return Optional.of(Integer.parseInt(l));
+        } catch (NumberFormatException ignored) {
+            return Optional.empty();
+        }
     }
 }

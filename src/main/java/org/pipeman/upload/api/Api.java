@@ -21,8 +21,8 @@ public class Api {
         try {
             String password = Utils.getOrElse(ctx.header("password"), "");
             String filename = Utils.getOrElse(ctx.header("filename"), "");
-            long delDelay = Math.max(getLong(ctx.header("delete-delay")).orElse(604_800L), 300); // default 7 days, minimum 5 minutes
-            int maxDownloads = getInt(ctx.header("max-download-count")).orElse(-1);
+            long delDelay = Math.max(Utils.getLong(ctx.header("delete-delay")).orElse(604_800L), 300); // default 7 days, minimum 5 minutes
+            int maxDownloads = Utils.getInt(ctx.header("max-download-count")).orElse(-1);
             if (maxDownloads == 0) maxDownloads = -1;
 
             Upload upload = UploadManager.INSTANCE.createUpload(password, filename, delDelay, maxDownloads);
@@ -150,22 +150,6 @@ public class Api {
             if (deleteFile) UploadManager.INSTANCE.deleteFile(s);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static Optional<Long> getLong(String l) {
-        try {
-            return Optional.of(Long.parseLong(l));
-        } catch (NumberFormatException ignored) {
-            return Optional.empty();
-        }
-    }
-
-    private static Optional<Integer> getInt(String l) {
-        try {
-            return Optional.of(Integer.parseInt(l));
-        } catch (NumberFormatException ignored) {
-            return Optional.empty();
         }
     }
 
