@@ -77,6 +77,24 @@
         background-image: url("pipe.svg");
         background-size: 30px;
     }
+
+    #progress {
+        appearance: none;
+        color: forestgreen;
+    }
+
+
+    #progress::-moz-progress-bar {
+        background: forestgreen;
+    }
+
+    #progress::-webkit-progress-value {
+        background: forestgreen;
+    }
+
+    #progress::-webkit-progress-bar {
+        background: forestgreen;
+    }
 </style>
 <body>
 <div class="center" id="drop-container">
@@ -116,7 +134,7 @@
            onclick="upload()">
     <br>
     <div id="progress-div" hidden>
-        <h2>Uploading...</h2>
+        <h2 id="upload-progress">Uploading...</h2>
         <progress id="progress">Upload-Progress</progress>
     </div>
     <br>
@@ -139,6 +157,7 @@
 </div>
 
 <script>
+    const uploadText = "Uploading... ";
     const fileSelector = document.getElementById('file-selector');
     let file;
     let cancelled = false;
@@ -206,6 +225,10 @@
     function uploadFile(deleteDelay, maxDownloads) {
         const fileReader = new FileReader();
         const progressBar = document.getElementById("progress");
+        const progressHeader = document.getElementById("upload-progress");
+        progressHeader.innerText = uploadText + "(Reading file)";
+        progressHeader.style.color = "black";
+        progressBar.value = 0;
         document.getElementById("progress-div").hidden = false;
 
         fileReader.readAsArrayBuffer(file);
@@ -216,43 +239,46 @@
                 fetch("/api/uploads/create", {
                     method: "POST",
                     headers: {
-                        "password": document.getElementById("password").value,
-                        "filename": file.name,
-                        "delete-delay": deleteDelay,
-                        "max-download-count": maxDownloads
+                        "password": document.getElementById("password").value + "",
+                        "filename": file.name + "",
+                        "delete-delay": deleteDelay + "",
+                        "max-download-count": maxDownloads + ""
                     }
-                }).then(response => response.json().then(async result => {
+                }).then(response => {
                     if (response.status !== 200) {
-                        // upload failed
-                        progressBar.hidden = true;
+                        progressHeader.innerText = "Upload failed";
+                        progressHeader.style.color = "orangered";
                         return;
                     }
 
-                    progressBar.max = arrayBuffer.byteLength;
-                    const uploadID = result["upload-id"];
+                    response.json().then(async result => {
+                        progressBar.max = arrayBuffer.byteLength;
+                        const uploadID = result["upload-id"];
 
-                    // upload chunks
-                    const bufferSize = 2_097_152; // 1_048_576
-                    for (let i = 0; i < arrayBuffer.byteLength; i += bufferSize) {
-                        if (cancelled) {
-                            showStage(1);
-                            return;
+                        // upload chunks
+                        const bufferSize = 2_097_152; // 1_048_576
+                        for (let i = 0; i < arrayBuffer.byteLength; i += bufferSize) {
+                            if (cancelled) {
+                                showStage(1);
+                                return;
+                            }
+                            progressBar.value = i;
+                            progressHeader.innerText = uploadText + "(" + Math.round((i / arrayBuffer.byteLength) * 100) + "%)";
+                            await fetch("/api/uploads/write?id=" + uploadID, {
+                                method: "POST",
+                                body: arrayBuffer.slice(i, i + bufferSize)
+                            });
                         }
-                        progressBar.value = i;
-                        await fetch("/api/uploads/write?id=" + uploadID, {
-                            method: "POST",
-                            body: arrayBuffer.slice(i, i + bufferSize)
-                        });
-                    }
 
-                    await fetch("/api/uploads/close?id=" + uploadID, {
-                        method: "POST"
-                    }).then(r => r.json().then(j => {
-                        document.getElementById("progress-div").hidden = true;
-                        document.getElementById("download-link").value = window.location.origin + "/download/" + j["file-id"];
-                        showStage(4);
-                    }));
-                }));
+                        await fetch("/api/uploads/close?id=" + uploadID, {
+                            method: "POST"
+                        }).then(r => r.json().then(j => {
+                            document.getElementById("progress-div").hidden = true;
+                            document.getElementById("download-link").value = window.location.origin + "/download/" + j["file-id"];
+                            showStage(4);
+                        }));
+                    })
+                });
             }
         }
     }
