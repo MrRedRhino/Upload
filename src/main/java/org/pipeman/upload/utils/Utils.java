@@ -43,4 +43,24 @@ public class Utils {
             return Optional.empty();
         }
     }
+
+    public static class Mutable<T> {
+        private T value;
+
+        public static <T> Mutable<T> of(T value) {
+            return new Mutable<>(value);
+        }
+
+        public Mutable(T value) {
+            this.value = value;
+        }
+
+        public T get() {
+            return value;
+        }
+
+        public void set(T newValue) {
+            value = newValue;
+        }
+    }
 }

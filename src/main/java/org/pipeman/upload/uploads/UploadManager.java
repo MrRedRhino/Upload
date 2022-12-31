@@ -49,10 +49,9 @@ public class UploadManager {
         uploads.remove(uploadId);
     }
 
-    public UploadMeta increaseDownloadCount(UploadMeta meta, String fileId) {
-        UploadMeta newMeta = meta.increaseDownloads(1);
-        Database.INSTANCE.getDB().put(fileId.getBytes(), newMeta.serialize());
-        return newMeta;
+    public void increaseDownloadCount(UploadMeta meta, String fileId) {
+        meta.downloads().set(meta.downloads().get() + 1);
+        Database.INSTANCE.getDB().put(fileId.getBytes(), meta.serialize());
     }
 
     public boolean hasExpired(UploadMeta meta) {

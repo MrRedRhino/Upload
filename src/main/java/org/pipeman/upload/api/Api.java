@@ -116,7 +116,7 @@ public class Api {
             }
         }
 
-        meta = UploadManager.INSTANCE.increaseDownloadCount(meta, s);
+        UploadManager.INSTANCE.increaseDownloadCount(meta, s);
 
         if (UploadManager.INSTANCE.hasExpired(meta)) {
             ctx.status(404);
@@ -126,7 +126,7 @@ public class Api {
         }
 
         boolean deleteFile = false;
-        if (meta.maxDownloads() != -1 && meta.downloads() >= meta.maxDownloads()) {
+        if (meta.maxDownloads() != -1 && meta.downloads().get() >= meta.maxDownloads()) {
             UploadManager.INSTANCE.deleteDBEntry(s);
             deleteFile = true;
         }

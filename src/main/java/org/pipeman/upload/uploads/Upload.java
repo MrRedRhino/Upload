@@ -71,7 +71,7 @@ public class Upload {
     }
 
     public UploadMeta createMeta() {
-        return new UploadMeta(password, filename, Utils.timeSeconds() + deleteDelay, maxDownloads, 0);
+        return new UploadMeta(password, filename, Utils.timeSeconds() + deleteDelay, maxDownloads, Utils.Mutable.of(0));
     }
 
     public long size() {
